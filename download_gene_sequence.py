@@ -1,9 +1,9 @@
+import math
 import sys
 
 from Bio import Entrez
 from Bio import SeqIO
 import os
-import datetime
 import threading
 
 def complement_sequence(dna_sequence):
@@ -50,7 +50,40 @@ def map_entrez_to_gi(entrez_id):
                                         return gi_number, int(region_start), int(region_end) + 1, strand
                                     else:
                                         return gi_number, int(region_start) + 1, int(region_end) + 1, strand
+                                else:
+                                    try:
+                                        start_list = []
+                                        end_list = []
+                                        strand_list = []
 
+                                        all_str_line = str(locate)
+
+                                        while("Seq-interval_from" in all_str_line):
+
+                                            start = all_str_line.find("Seq-interval_from")
+                                            end = all_str_line.find("Seq-interval_id")
+                                            str_line = all_str_line[start:end]
+                                            values = str_line.split(",")
+
+
+                                            start_list.append(int(values[0].strip("'").split(":")[1].strip().strip("'")))
+                                            end_list.append(int(values[1].strip("'").split(":")[1].strip().strip("'")))
+                                            pos = str_line.find("attributes={'value': ")
+                                            pos_line = str_line[pos:]
+                                            strand = pos_line.split(":")[1].strip().split("}")[0].strip().strip("'")
+                                            all_str_line = all_str_line[end+len("Seq-interval_id"):]
+                                            strand_list.append(strand)
+
+                                        all_pos = start_list + end_list
+                                        max_value = max(all_pos)
+                                        min_value = min(all_pos)
+
+                                        if (strand_list[0] == "minus"):
+                                            return gi_number, int(min_value) , int(max_value) + 1, strand_list[0]
+                                        else:
+                                            return gi_number, int(min_value) + 1, int(max_value) + 1, strand_list[0]
+                                    except Exception as e:
+                                        print(e)
 
         return gi_number, region_start, region_end, strand
 
@@ -77,9 +110,6 @@ def extract_gene_sequence(entrez_id, gi_number, start, end, strand):
         else:
             return str(record.seq)
 
-
-
-
     except Exception as e:
         print(f"Error extracting sequence for Entrez ID {entrez_id}: {e}")
         return None
@@ -87,7 +117,13 @@ def extract_gene_sequence(entrez_id, gi_number, start, end, strand):
 def download_single_sequence(entrez_id, sequence_file):
 
     gi_number, region_start, region_end, strand = map_entrez_to_gi(entrez_id)
-    sequence = extract_gene_sequence(entrez_id, gi_number, region_start, region_end, strand)
+
+    sequence = ""
+    if(region_start!=-1):
+        sequence = extract_gene_sequence(entrez_id, gi_number, region_start, region_end, strand)
+    else:
+        print(entrez_id)
+
     if(sequence):
         f = open(sequence_file, "w")
         f.write(">" + entrez_id + "\n" + sequence + "\n")
@@ -152,6 +188,8 @@ def check_missing_genes(gene_id_list_file, sequence_dir): # check the proteins w
         if(os.path.exists(sequence_dir + "/" + gene_id + ".fasta")==False):
             print(gene_id)
 
+
+
 if __name__ == "__main__":
 
     download_bulk_sequence_multi_thread(sys.argv[1], sys.argv[2], int(sys.argv[3]))
@@ -159,5 +197,7 @@ if __name__ == "__main__":
 
     #check_missing_genes(sys.argv[1], sys.argv[2])
     # example: python ./download_gene_sequence.py ./all_gene_list ./gene_sequence/
+
+    #download_single_sequence(sys.argv[1], sys.argv[2])
 
 
