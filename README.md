@@ -13,3 +13,6 @@
 >
 <b> [5] Find the mRNA ID for a protein from UniProt database using UniProt ID:
 >download_protein_reference.py
+>
+<b> [6] Convert mRNA sequence as protein sequence:
+>mRNA2protein.py
