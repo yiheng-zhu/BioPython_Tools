@@ -16,3 +16,6 @@
 >
 <b> [6] Convert mRNA sequence as protein sequence:
 >mRNA2protein.py
+>
+<b> [7] Create PSSM for protein sequences:
+>PSSM.py
